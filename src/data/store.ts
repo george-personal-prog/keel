@@ -19,7 +19,7 @@ import {
 } from '../engine';
 import type { TrackChangeTiming } from '../engine/state';
 import { draftToSessionLog, type Draft } from '../app/draft';
-import { db, type Profile } from './db';
+import { db, type BodyRow, type Profile } from './db';
 
 export interface AppData {
   settings: Settings;
@@ -27,6 +27,7 @@ export interface AppData {
   profile: Profile | null;
   history: History;
   draft: Draft | null;
+  body: BodyRow[];
 }
 
 /** Merge stored settings over defaults so new settings fields get sane values. */
@@ -40,13 +41,14 @@ function withDefaults(s: Partial<Settings> | undefined): Settings {
 
 export function useAppData(): AppData | undefined {
   return useLiveQuery(async () => {
-    const [settingsRow, stateRow, profileRow, sessions, skips, draft] = await Promise.all([
+    const [settingsRow, stateRow, profileRow, sessions, skips, draft, body] = await Promise.all([
       db.meta.get('settings'),
       db.meta.get('trackState'),
       db.meta.get('profile'),
       db.sessions.orderBy('date').toArray(),
       db.skips.orderBy('date').toArray(),
       db.drafts.get('current'),
+      db.body.orderBy('date').toArray(),
     ]);
     return {
       settings: withDefaults(settingsRow?.value as Partial<Settings> | undefined),
@@ -54,6 +56,7 @@ export function useAppData(): AppData | undefined {
       profile: (profileRow?.value as Profile) ?? null,
       history: { sessions, skips: skips.map(({ date, reason }) => ({ date, reason })) },
       draft: draft ?? null,
+      body,
     };
   }, []);
 }
@@ -119,6 +122,42 @@ export async function recordSkip(reason: SkipReason, date = localToday()): Promi
 
 export async function updateSessionNotes(id: string, notes: string): Promise<void> {
   await db.sessions.update(id, { notes: notes.trim() || undefined });
+}
+
+// ------------------------------------------------------------------ body
+
+/** One body entry per day: saving again on the same day merges into it. */
+export async function saveBodyEntry(entry: Omit<BodyRow, 'id'>): Promise<void> {
+  await db.transaction('rw', db.body, async () => {
+    const existing = await db.body.where('date').equals(entry.date).first();
+    if (existing?.id != null) {
+      await db.body.update(existing.id, {
+        bodyweightKg: entry.bodyweightKg ?? existing.bodyweightKg,
+        girthsCm: { ...(existing.girthsCm ?? {}), ...(entry.girthsCm ?? {}) },
+      });
+    } else {
+      await db.body.add(entry);
+    }
+  });
+}
+
+export async function addPhoto(file: File, date = localToday()): Promise<void> {
+  const thumb = await makeThumb(file, 360);
+  await db.photos.put({ id: `${date}-${Date.now().toString(36)}`, date, thumb, blob: file });
+}
+
+export async function deletePhoto(id: string): Promise<void> {
+  await db.photos.delete(id);
+}
+
+async function makeThumb(file: Blob, size: number): Promise<string> {
+  const bmp = await createImageBitmap(file);
+  const scale = size / Math.max(bmp.width, bmp.height);
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * scale);
+  c.height = Math.round(bmp.height * scale);
+  c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.75);
 }
 
 // ------------------------------------------------------------------ export

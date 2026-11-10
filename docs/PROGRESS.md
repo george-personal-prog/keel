@@ -13,15 +13,22 @@
 - Deployed via GitHub Pages: https://george-personal-prog.github.io/keel/
 - GitHub CLI lives at `~/.local/bin/gh` (not on PATH; Homebrew isn't installed). Git pushes authenticate through it.
 
+**Phase 3 — Analytics + badges: done (first version).**
+- `src/analytics/` (pure, 16 tests): e1RM / best-make series, trends, rep records, weekly volume per muscle, adherence & streaks, HR training load, benchmark & interval histories, block summaries, body series; `badges.ts` replays records and badges from history.
+- `src/ui/charts.tsx`: SVG line/bar charts and stat tiles with touch readouts.
+- Progress tab: Overview (week strip, weak-point small multiples, main-lift trends, latest records, block summaries), Strength (lift picker, e1RM chart with PRs, rep records, sets per muscle vs 10–20 band, weekly volume), Engine (benchmarks with history charts, interval pace trends vs target, weekly HR load), Body (bodyweight chart, girths, shoulder:waist, private photos), Badges (31 badges, records feed).
+- Session summary shows records and badges earned in that session.
+- 158 tests total. Reviewed at 390×844 with 12 weeks of simulated data.
+
 ## Next
 
 1. **Owner test on iPhone**: install via Safari → Share → Add to Home Screen; run calibration week; collect feedback.
-2. **Phase 3 — analytics + badges**: e1RM trend charts, rep-PR tables, weekly sets per muscle over time, adherence/skip patterns, conditioning trends (benchmarks, erg paces, HR load), bodyweight/girths, block summaries, badges.
-3. Phase 4 — polish (light mode?, motion pass, empty/edge states, a11y), phase 5 — Firebase sync + import.
+2. Phase 4 — polish (light mode?, motion pass, empty/edge states, a11y), phase 5 — Firebase sync + import.
 
 Known small gaps in phase 2:
 - A skip logged on the same day as a completed session doesn't trigger the "ill" return modifier (readiness compares skip date > last session date).
-- Body data (bodyweight log, girths, photos) has a DB table but no screen yet: planned for phase 3.
+- Progress photos are not in the JSON export (size); Firebase sync in phase 5 should decide whether to back them up.
+- JS bundle is ~480 kB (Vite warns at 500 kB): consider code-splitting the Progress tab in phase 4.
 - Lint warnings remain for React "set-state-in-effect" in sheets/steppers (harmless; tidy in phase 4).
 
 ## Open questions / ideas to revisit

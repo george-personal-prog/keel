@@ -43,7 +43,7 @@ export default function App() {
 
   if (summaryId) {
     const session = data.history.sessions.find((s) => s.id === summaryId);
-    if (session) return <Summary session={session} history={data.history} onDone={() => setSummaryId(null)} />;
+    if (session) return <Summary session={session} history={data.history} frequency={data.state.track.frequency} onDone={() => setSummaryId(null)} />;
   }
 
   if (loggerOpen && data.draft) {

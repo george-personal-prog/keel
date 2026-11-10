@@ -77,3 +77,28 @@
   white-space: nowrap;
   color: var(--text);
 }
+
+.sum-badges {
+  display: grid;
+  gap: var(--s3);
+  margin-top: var(--s2);
+}
+.sum-prs-head + .sum-pr ~ .sum-badges,
+.sum-pr + .sum-badges {
+  border-top: 1px solid var(--line);
+  padding-top: var(--s3);
+}
+.sum-badge {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: var(--s3);
+  align-items: center;
+}
+.sum-badge b {
+  display: block;
+  color: var(--brass);
+}
+.sum-badge span {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}

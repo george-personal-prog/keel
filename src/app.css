@@ -443,7 +443,7 @@ button.hist-row:active {
   background: var(--surface);
   overflow: hidden;
 }
-.bar-track span {
+.bar-track .bar-fill {
   display: block;
   height: 100%;
   border-radius: 5px;
@@ -451,7 +451,7 @@ button.hist-row:active {
   transform-origin: left;
   animation: grow var(--t-slow) var(--ease-out);
 }
-.bar.is-weak .bar-track span {
+.bar.is-weak .bar-track .bar-fill {
   background: var(--signal);
 }
 .bar.is-weak {

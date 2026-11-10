@@ -1,0 +1,148 @@
+.chart {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  --series: var(--text);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.chart-sea {
+  --series: var(--sea);
+}
+.chart-signal {
+  --series: var(--signal);
+}
+.chart svg {
+  display: block;
+  overflow: visible;
+}
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.chart-axis {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.chart-target {
+  stroke: var(--text-3);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+.chart-band {
+  fill: rgba(255, 255, 255, 0.075);
+}
+.chart-tick {
+  fill: var(--text-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.chart-line {
+  fill: none;
+  stroke: var(--series);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.chart-pr {
+  fill: var(--brass);
+  stroke: var(--bg-raised);
+  stroke-width: 2;
+}
+.chart-last {
+  fill: var(--series);
+  stroke: var(--bg-raised);
+  stroke-width: 2;
+}
+.chart-cross {
+  stroke: var(--text-3);
+  stroke-width: 1;
+}
+.chart-hover {
+  fill: var(--bg-raised);
+  stroke: var(--series);
+  stroke-width: 2;
+}
+.chart-bar {
+  fill: var(--text-3);
+  transition: opacity var(--t-fast);
+}
+.chart-bar.is-emph {
+  fill: var(--series);
+}
+.chart-ink .chart-bar.is-emph {
+  fill: var(--text);
+}
+.chart-bar.is-hover {
+  opacity: 0.75;
+}
+.chart-tip {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: var(--surface-hi);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 0 1px var(--line-strong);
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+.chart-tip strong {
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+.chart-empty {
+  padding: var(--s6) 0;
+  text-align: center;
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+
+/* ------------------------------------------------------------------ stat tiles */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.stat-value {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.stat-value .display {
+  font-size: 32px;
+}
+.stat-value small {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.stat-label {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.stat-delta {
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+.stat-delta.is-good {
+  color: var(--ok);
+}
+.stat-delta.is-bad {
+  color: var(--rir-1);
+}
+.stat-brass .stat-value .display {
+  color: var(--brass);
+}
+.stat-sea .stat-value .display {
+  color: var(--sea);
+}

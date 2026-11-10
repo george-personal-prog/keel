@@ -30,12 +30,21 @@ export interface BodyRow {
   photoIds?: string[];
 }
 
+export interface PhotoRow {
+  id: string;
+  date: string;
+  /** Small JPEG data URL for grids. */
+  thumb: string;
+  blob: Blob;
+}
+
 export class KeelDB extends Dexie {
   meta!: EntityTable<MetaRow, 'key'>;
   sessions!: EntityTable<SessionLog, 'id'>;
   skips!: EntityTable<SkipRow, 'id'>;
   drafts!: EntityTable<Draft, 'id'>;
   body!: EntityTable<BodyRow, 'id'>;
+  photos!: EntityTable<PhotoRow, 'id'>;
 
   constructor(name = 'keel') {
     super(name);
@@ -45,6 +54,10 @@ export class KeelDB extends Dexie {
       skips: '++id, date',
       drafts: 'id',
       body: '++id, date',
+    });
+    // v2: local progress photos (never leave the device).
+    this.version(2).stores({
+      photos: 'id, date',
     });
   }
 }

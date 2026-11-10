@@ -180,6 +180,7 @@ export function draftToSessionLog(d: Draft, id: string, now?: number): SessionLo
           score: d.conditioning.score,
           targetSplit: targetSplitOf(c.intervals?.target),
           hr: d.conditioning.hr,
+          durationMin: d.conditioning.score.timeSec != null ? Math.round((d.conditioning.score.timeSec / 60) * 10) / 10 : c.durationMin,
         }
       : undefined;
 
@@ -191,6 +192,7 @@ export function draftToSessionLog(d: Draft, id: string, now?: number): SessionLo
     phase: p.phase,
     deload: p.phase === 'deload',
     partial: !isComplete(d),
+    blockNumber: p.blockNumber,
     exercises,
     conditioning,
     notes: d.notes.trim() || undefined,

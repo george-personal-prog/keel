@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { bestSetE1rm, DAY_TEMPLATES, getMovement, type History, type SessionLog } from '../engine';
 import { kg, mmss, shortDate } from '../app/format';
 import { updateSessionNotes } from '../data/store';
+import { achievementsForSession, computeAchievements } from '../analytics/badges';
+import { BadgeMedal } from './progress/Badges';
 import { Button, Capsule, Card } from '../ui/components';
 import { IconTrophy, KeelMark } from '../ui/icons';
 import './summary.css';
@@ -33,11 +35,13 @@ export function highlights(session: SessionLog, history: History): ExerciseHighl
   });
 }
 
-export function Summary({ session, history, onDone }: { session: SessionLog; history: History; onDone: () => void }) {
+export function Summary({ session, history, frequency, onDone }: { session: SessionLog; history: History; frequency: number; onDone: () => void }) {
   const [notes, setNotes] = useState(session.notes ?? '');
   const hs = useMemo(() => highlights(session, history), [session, history]);
   useEffect(() => window.scrollTo({ top: 0 }), []);
-  const prs = hs.filter((h) => h.isPR);
+  const earned = useMemo(() => achievementsForSession(computeAchievements(history, frequency), session.id), [history, frequency, session.id]);
+  const records = earned.filter((a) => a.kind !== 'badge');
+  const badges = earned.filter((a) => a.kind === 'badge');
   const sets = session.exercises.reduce((a, e) => a + e.sets.length, 0);
   const tonnage = session.exercises.reduce((a, e) => a + e.sets.reduce((b, s) => b + (s.loadKg ?? 0) * s.reps, 0), 0);
   const title = DAY_TEMPLATES[session.dayTypeId]?.title ?? 'Session';
@@ -69,22 +73,37 @@ export function Summary({ session, history, onDone }: { session: SessionLog; his
         </div>
       </div>
 
-      {prs.length > 0 && (
+      {(records.length > 0 || badges.length > 0) && (
         <Card className="sum-prs">
-          <div className="sum-prs-head">
-            <IconTrophy size={22} />
-            <span>
-              {prs.length} new e1RM best{prs.length > 1 ? 's' : ''}
-            </span>
-          </div>
-          {prs.map((h) => (
-            <div key={h.movementId} className="sum-pr">
-              <span>{h.name}</span>
-              <span className="num">
-                {Math.round(h.e1rm)} kg <small>+{(h.e1rm - h.prevBest).toFixed(1)}</small>
-              </span>
+          {records.length > 0 && (
+            <>
+              <div className="sum-prs-head">
+                <IconTrophy size={22} />
+                <span>
+                  {records.length} new record{records.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              {records.map((r) => (
+                <div key={r.id} className="sum-pr">
+                  <span>{r.title}</span>
+                  <span className="num">{r.detail}</span>
+                </div>
+              ))}
+            </>
+          )}
+          {badges.length > 0 && (
+            <div className="sum-badges">
+              {badges.map((b) => (
+                <div key={b.id} className="sum-badge">
+                  <BadgeMedal tier={b.tier ?? 1} earned size={48} />
+                  <div>
+                    <b>{b.title}</b>
+                    <span>{b.detail}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </Card>
       )}
 

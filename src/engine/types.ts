@@ -358,6 +358,8 @@ export interface LoggedConditioning {
   /** For interval sessions: the target that was prescribed (e.g. pace sec/500m). */
   targetSplit?: number;
   hr?: HeartRateEntry;
+  /** Minutes of work (time score for "for time", otherwise the prescribed duration). */
+  durationMin?: number;
 }
 
 export interface SessionLog {
@@ -374,6 +376,8 @@ export interface SessionLog {
   notes?: string;
   /** Wall-clock minutes from start to finish (UI-recorded). */
   durationMin?: number;
+  /** Block the session belonged to (UI-recorded from the prescription). */
+  blockNumber?: number;
 }
 
 export type SkipReason = 'motivation' | 'busy' | 'ill' | 'away';

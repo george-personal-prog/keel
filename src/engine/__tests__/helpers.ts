@@ -149,6 +149,7 @@ export function perform(a: Athlete, p: SessionPrescription, date: string): Sessi
     phase: p.phase,
     deload: p.phase === 'deload',
     partial: false,
+    blockNumber: p.blockNumber,
     exercises,
     conditioning: c
       ? {
@@ -157,6 +158,8 @@ export function perform(a: Athlete, p: SessionPrescription, date: string): Sessi
           format: c.format,
           scoreType: c.scoreType,
           benchmark: c.benchmark,
+          durationMin: c.durationMin,
+          hr: { avg: 158, max: 176 },
           score: c.id === 'test:row-2k' ? { timeSec: 400 } : c.id === 'test:air-bike-10' ? { calories: 180 } : c.id === 'test:ski-1k' ? { timeSec: 220 } : { timeSec: 420 },
         }
       : undefined,

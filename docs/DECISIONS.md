@@ -116,3 +116,27 @@ In the last week of every block, the first metcon day runs the least-recently-do
 
 ### P16. WOD loads are personal
 Barbell loads in generated WODs and benchmarks are capped at ~60% of the user's own estimated max for that lift, never above Rx; when scaled, the Rx is shown.
+
+---
+
+## Analytics & motivation (phase 3)
+
+### A1. Analytics are pure functions over history
+`src/analytics/` (unit-tested). Nothing is stored, so numbers can never drift from the log, and changing a formula re-computes all history.
+
+### A2. Metrics, all explainable
+- **Strength:** best-set e1RM per session (Epley on reps + RIR), PRs = > 0.5% above all previous; 8-week trend = least-squares slope in kg/week. Olympic lifts chart the heaviest *clean make* instead (no rep extrapolation for skill lifts).
+- **Rep records:** heaviest load per rep count, keeping only the frontier (a lighter load at fewer reps is not shown).
+- **Volume:** hard sets per muscle per week, prime mover = 1, synergist = ½; shown against a 10–20 sets/week reference band.
+- **Adherence:** sessions per week vs your frequency; streak = consecutive full weeks on target; 12-week rate excludes the current week.
+- **Conditioning load:** Edwards' TRIMP = Σ minutes in zone × zone number. If only average HR is logged, the whole piece counts in that average's zone (% of your highest logged max HR, fallback 190). Shown with this explanation in the UI.
+- **Benchmarks:** best and last per benchmark/test; only Rx results can be PRs. Time scores chart inverted so up = better.
+
+### A3. Achievements are replayed, never stored
+`computeAchievements(history, frequency)`: records (e1RM PRs on main lifts after 2 exposures, rep PRs on compound lifts at 1–12 reps after the first exposure, benchmark PRs) and one-off badges (session counts, calibration, 4–52-week streaks, blocks completed, 250/500/1000 hard sets per weak-point muscle, benchmarks). Calibration and first exposures can't produce PRs, so the feed stays meaningful.
+
+### A4. Charts are hand-built SVG
+No chart dependency. One y-axis, 2px lines, markers with a surface ring, recessive grid, text in text colours, brass for PR markers, sea for conditioning, small multiples instead of a multi-colour chart for the four weak points. Every plot has a tap/drag readout.
+
+### A5. Body data and photos
+One body entry per day (merging). Progress photos are stored as blobs in IndexedDB (schema v2 adds a `photos` table) with a small thumbnail; they never leave the phone and are not included in the JSON export (size).
