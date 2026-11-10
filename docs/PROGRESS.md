@@ -16,17 +16,17 @@
   - `generate.ts` — `prescribeNextSession()`. `state.ts` — reducers. `volume.ts` — hard sets per muscle.
 - 132 unit tests (`npm test`, < 1 s), including multi-week simulations of a virtual athlete across all 8 track combinations.
 - Phase-1 holding page (`src/App.tsx`) previews a week of sessions per track.
-- GitHub Pages workflow ready (`.github/workflows/deploy.yml`) — **repo not created yet**.
+- Deployed: repo `george-personal-prog/keel` (public), live at https://george-personal-prog.github.io/keel/ — every push to `main` runs lint + tests + build, then deploys.
+- GitHub CLI lives at `~/.local/bin/gh` (not on PATH; Homebrew isn't installed). Git pushes authenticate through it.
 
 ## Next
 
-1. **Create the GitHub repo + enable Pages** (owner action, instructions given in chat) and push.
-2. **Phase 2 — design system + core logging UI**
+1. **Phase 2 — design system + core logging UI**
    - Design tokens (palette, type scale, spacing, radii, motion), components, dark-first. Review every screen at 390×844.
    - Dexie DB (versioned) for history, track state, settings, body data.
    - Screens: Today (one tap from launch), session logger (pre-filled sets, RIR chips 0–4+, one/two-tap logging, rest timer), WOD score entry with HR, skip flow with reasons, short-on-time, swap sheet, edit target weight, notes, track settings, onboarding/calibration.
    - PWA manifest, icons, safe areas.
-3. Phase 3 — analytics + badges. Phase 4 — polish/PWA install. Phase 5 — Firebase sync + export.
+2. Phase 3 — analytics + badges. Phase 4 — polish/PWA install. Phase 5 — Firebase sync + export.
 
 ## Open questions / ideas to revisit
 - Use bodyweight (when logged) to make weighted pull-up/dip e1RMs meaningful for deload detection and analytics.
