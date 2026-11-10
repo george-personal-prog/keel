@@ -5,6 +5,7 @@ import { componentText, exerciseSummary, kg, longDate, PHASE_LABEL, wodMeta } fr
 import { declineDeloadToday, localToday, recordSkip, saveDraft, type AppData } from '../data/store';
 import { Button, Capsule, Card, Sheet, Toast, Waterline } from '../ui/components';
 import { haptic } from '../ui/haptics';
+import { isIOS, isStandalone, useUpdateReady } from '../app/pwa';
 import { IconBolt, IconChevronRight, IconInfo, IconSkip, IconTimer, IconWave, KeelMark } from '../ui/icons';
 
 const SKIP_REASONS: { id: SkipReason; title: string; body: string }[] = [
@@ -51,6 +52,14 @@ export function Today({ data, onOpenLogger }: { data: AppData; onOpenLogger: () 
   );
 
   const draft = data.draft;
+  const updateReady = useUpdateReady();
+  const [installHint, setInstallHint] = useState(() => {
+    try {
+      return isIOS() && !isStandalone() && localStorage.getItem('keel.installHint') !== 'off';
+    } catch {
+      return false;
+    }
+  });
   const p = prescription;
   const skippedToday = data.history.skips.filter((s) => s.date === today);
   const blockProgress = p.blockLengthWeeks > 1 ? (p.weekInBlock - 1) / p.blockLengthWeeks : 0;
@@ -115,6 +124,35 @@ export function Today({ data, onOpenLogger }: { data: AppData; onOpenLogger: () 
       </section>
 
       <div className="stack">
+        {updateReady && (
+          <button className="flag flag-sea update-pill" onClick={() => location.reload()}>
+            <IconWave size={20} />
+            <span>
+              <b>Keel was updated.</b> Tap to load the new version.
+            </span>
+          </button>
+        )}
+        {installHint && (
+          <div className="flag install-hint">
+            <IconInfo size={20} />
+            <span>
+              Install Keel for full-screen, offline use: tap <b>Share</b>, then <b>Add to Home Screen</b>.
+              <button
+                className="install-dismiss"
+                onClick={() => {
+                  setInstallHint(false);
+                  try {
+                    localStorage.setItem('keel.installHint', 'off');
+                  } catch {
+                    /* ignore */
+                  }
+                }}
+              >
+                Got it
+              </button>
+            </span>
+          </div>
+        )}
         {p.deload && p.deload.evidence.length > 0 && !draft && (
           <Card className="deload-card">
             <Capsule tone="brass">Deload recommended</Capsule>

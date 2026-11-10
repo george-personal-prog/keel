@@ -102,3 +102,30 @@
   font-size: var(--fs-sm);
   color: var(--text-2);
 }
+
+.sum-prs {
+  position: relative;
+  overflow: hidden;
+}
+/* one slow sheen across the card: celebratory, not confetti */
+.sum-prs::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(231, 195, 106, 0.16) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: sheen 1.4s var(--ease-out) 0.5s forwards;
+  pointer-events: none;
+}
+@keyframes sheen {
+  to { transform: translateX(100%); }
+}
+.sum-badge {
+  animation: badge-in 520ms var(--ease-spring) backwards;
+}
+@keyframes badge-in {
+  from { opacity: 0; transform: scale(0.85) translateY(6px); }
+}
+.sum-pr {
+  animation: screen-in var(--t-slow) var(--ease-out) backwards;
+}

@@ -3,6 +3,7 @@ import { badgeCatalog, type Achievement, type BadgeCategory } from '../../analyt
 import { shortDate } from '../../app/format';
 import { Card, Segmented } from '../../ui/components';
 import { IconTrophy } from '../../ui/icons';
+import './medal.css';
 
 const CATEGORY_LABEL: Record<BadgeCategory, string> = {
   milestone: 'Milestones',

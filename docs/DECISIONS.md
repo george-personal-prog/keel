@@ -39,6 +39,9 @@ One tap on the check logs a set exactly as prescribed (load, reps, target RIR); 
 ### T10. PWA without a plugin
 Hand-written `public/manifest.webmanifest` and `public/sw.js` (network-first navigations with cached shell fallback; cache-first for content-hashed assets). iOS icons and launch screens are PNGs generated from the mark. Fewer dependencies, nothing magic to break.
 
+### T10b. Offline precache from the build manifest (phase 4)
+Vite writes `asset-manifest.json`; the service worker precaches every file in it on install (so lazily-loaded screens work offline on first launch), prunes assets the new build no longer references on activate, and the app calls `registration.update()` whenever it returns to the foreground. When a new version takes over, Today shows a one-tap "Keel was updated" reload pill rather than reloading under the user mid-session.
+
 ### T11. Fonts bundled locally
 Archivo variable (width + weight axes) via `@fontsource-variable/archivo`, so the app looks the same offline. Condensed width for numbers/titles, normal for body.
 
@@ -140,3 +143,27 @@ No chart dependency. One y-axis, 2px lines, markers with a surface ring, recessi
 
 ### A5. Body data and photos
 One body entry per day (merging). Progress photos are stored as blobs in IndexedDB (schema v2 adds a `photos` table) with a small thumbnail; they never leave the phone and are not included in the JSON export (size).
+
+---
+
+## Polish (phase 4)
+
+### Q1. Performance
+- The logger's clocks (elapsed time, rest timer) tick inside their own small components, so logging a set never competes with a whole-screen re-render every second.
+- History, Progress, Settings and Summary are code-split (`React.lazy`); the main bundle holds only what's needed to open Today and log a session.
+
+### Q2. Gym ergonomics
+- The screen stays awake during a session (Screen Wake Lock API, re-acquired when the app returns to the foreground).
+- When the last set is logged, the view scrolls to "Finish session" and the button pulses twice.
+- iPhone users in Safari (not installed) see a dismissible "Share → Add to Home Screen" hint.
+
+### Q3. Accessibility
+- `--text-3` raised to #808790 so every text token is ≥ 4.5:1 on the background and cards.
+- Sheets move focus into themselves when opened, close on Escape, and return focus to the control that opened them. All animations respect `prefers-reduced-motion`.
+
+### Q4. Celebration, but tasteful
+Records and badges on the session summary get one slow brass sheen across the card, a staggered spring-in for medals and a success haptic. No confetti.
+
+### Q5. Robustness
+- Effects never use expression bodies: modern browsers make `window.scrollTo` return a promise, which React treats as an invalid cleanup (this crashed the summary screen during review).
+- Sheets keep their last content while sliding out, and editable sheets initialise from props via a remount key rather than syncing state in effects (no lint warnings remain).

@@ -28,6 +28,7 @@ import { discardDraft, finishSession, saveDraft, swapForBlock, type AppData } fr
 import { Button, Capsule, IconButton, RirChips, Segmented, Sheet, Stepper, Toast, Waterline } from '../ui/components';
 import { haptic } from '../ui/haptics';
 import { IconCheck, IconClose, IconHeart, IconNote, IconPlus, IconSwap, IconTimer } from '../ui/icons';
+import { useWakeLock } from '../app/pwa';
 import './logger.css';
 
 function stepFor(loadType: LoadType, s: Settings): number {
@@ -61,17 +62,18 @@ export function Logger({ data, draft: initial, onClose, onFinished }: { data: Ap
   const [swapIdx, setSwapIdx] = useState<number | null>(null);
   const [sheet, setSheet] = useState<'leave' | 'notes' | 'wod' | 'finish' | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
+  const [editSeq, setEditSeq] = useState(0);
+  const [wodSeq, setWodSeq] = useState(0);
+  const openEdit = (t: EditTarget) => {
+    setEditSeq((n) => n + 1);
+    setEdit(t);
+  };
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
+  useWakeLock(true); // screen stays on during the session
   const clearToast = useCallback(() => setToast(null), []);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
-  }, []);
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 500);
-    return () => clearInterval(t);
   }, []);
 
   const commit = useCallback((d: Draft) => {
@@ -82,6 +84,11 @@ export function Logger({ data, draft: initial, onClose, onFinished }: { data: Ap
   const [focus, setFocus] = useState<{ exIdx: number; setIdx: number } | undefined>();
   const focusOpen = focus && draft.exercises[focus.exIdx]?.sets[focus.setIdx] && !draft.exercises[focus.exIdx].sets[focus.setIdx].done;
   const current = focusOpen ? focus : nextOpenSet(draft);
+  const finishRef = useRef<HTMLDivElement>(null);
+  const complete = progress(draft) >= 1;
+  useEffect(() => {
+    if (complete) finishRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [complete]);
   const pct = progress(draft);
 
   // ------------------------------------------------------------------ logging
@@ -94,7 +101,7 @@ export function Logger({ data, draft: initial, onClose, onFinished }: { data: Ap
       const suggestion = suggestedLoad(ex, setIdx);
       if (suggestion != null) d0 = setLoad(d0, exIdx, setIdx, suggestion, false);
       setDraftState(d0);
-      setEdit({ exIdx, setIdx, logAfter: true });
+      openEdit({ exIdx, setIdx, logAfter: true });
       return;
     }
     haptic();
@@ -135,15 +142,6 @@ export function Logger({ data, draft: initial, onClose, onFinished }: { data: Ap
     setToast(scope === 'block' ? 'Swapped for the rest of this block' : 'Swapped for today');
   };
 
-  const restLeft = draft.rest ? Math.min(draft.rest.durationSec, Math.max(0, Math.ceil((draft.rest.endsAt - now) / 1000))) : 0;
-  const restDoneRef = useRef(false);
-  useEffect(() => {
-    if (draft.rest && restLeft === 0 && !restDoneRef.current) {
-      restDoneRef.current = true;
-      haptic('success');
-    }
-    if (restLeft > 0) restDoneRef.current = false;
-  }, [restLeft, draft.rest]);
 
   const finish = async () => {
     haptic('success');
@@ -163,7 +161,7 @@ export function Logger({ data, draft: initial, onClose, onFinished }: { data: Ap
         <div className="lg-head-mid">
           <div className="lg-head-title">{p.title}</div>
           <div className="lg-head-sub num">
-            {mmss((now - draft.startedAt) / 1000)} elapsed · ~{p.estimatedMin} min plan
+            <Elapsed since={draft.startedAt} /> elapsed · ~{p.estimatedMin} min plan
           </div>
         </div>
         <IconButton label="Session notes" onClick={() => setSheet('notes')} className={draft.notes ? 'has-dot' : ''}>
@@ -207,7 +205,7 @@ export function Logger({ data, draft: initial, onClose, onFinished }: { data: Ap
             groupEnd={!!ex.prescription.group && draft.exercises[exIdx + 1]?.prescription.group !== ex.prescription.group}
             onLog={(setIdx) => logSet(exIdx, setIdx)}
             onUndo={(setIdx) => undoSet(exIdx, setIdx)}
-            onEdit={(setIdx) => setEdit({ exIdx, setIdx, logAfter: false })}
+            onEdit={(setIdx) => openEdit({ exIdx, setIdx, logAfter: false })}
             onRir={(setIdx, rir) => {
               commit(updateSet(draft, exIdx, setIdx, { rir }));
               setTimeout(() => setOpenRir(null), 250);
@@ -240,22 +238,25 @@ export function Logger({ data, draft: initial, onClose, onFinished }: { data: Ap
               ))}
             </ul>
             {p.conditioning.target && <div className="wod-target">{p.conditioning.target}</div>}
-            <Button variant={draft.conditioning.done ? 'secondary' : 'sea'} size="lg" block onClick={() => setSheet('wod')} style={{ marginTop: 16 }}>
+            <Button variant={draft.conditioning.done ? 'secondary' : 'sea'} size="lg" block onClick={() => {
+              setWodSeq((n) => n + 1);
+              setSheet('wod');
+            }} style={{ marginTop: 16 }}>
               {draft.conditioning.done ? 'Edit score' : 'Log score'}
             </Button>
           </section>
         )}
 
-        <div className="lg-finish">
+        <div className={`lg-finish ${complete ? 'is-ready' : ''}`} ref={finishRef}>
           <Button variant={pct >= 1 ? 'primary' : 'secondary'} size="lg" block onClick={() => (pct >= 1 ? finish() : setSheet('finish'))}>
             {pct >= 1 ? 'Finish session' : 'Finish early'}
           </Button>
         </div>
       </main>
 
-      {draft.rest && restLeft >= 0 && (
+      {draft.rest && (
         <RestBar
-          left={restLeft}
+          endsAt={draft.rest.endsAt}
           total={draft.rest.durationSec}
           onAdjust={(delta) => commit({ ...draft, rest: { ...draft.rest!, endsAt: draft.rest!.endsAt + delta * 1000, durationSec: Math.max(15, draft.rest!.durationSec + delta) } })}
           onSkip={() => commit({ ...draft, rest: undefined })}
@@ -264,6 +265,7 @@ export function Logger({ data, draft: initial, onClose, onFinished }: { data: Ap
 
       {/* ---------------------------------------------------------- sheets */}
       <EditSetSheet
+        key={`edit-${editSeq}`}
         target={edit}
         draft={draft}
         settings={data.settings}
@@ -280,6 +282,7 @@ export function Logger({ data, draft: initial, onClose, onFinished }: { data: Ap
       </Sheet>
 
       <WodSheet
+        key={`wod-${wodSeq}`}
         open={sheet === 'wod'}
         draft={draft}
         onClose={() => setSheet(null)}
@@ -453,8 +456,33 @@ function ExerciseCard({
 
 // ==================================================================== rest bar
 
-function RestBar({ left, total, onAdjust, onSkip }: { left: number; total: number; onAdjust: (d: number) => void; onSkip: () => void }) {
+/** Ticks on its own so the rest of the logger doesn't re-render every second. */
+function useNow(intervalMs: number): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(t);
+  }, [intervalMs]);
+  return now;
+}
+
+function Elapsed({ since }: { since: number }) {
+  const now = useNow(1000);
+  return <>{mmss((now - since) / 1000)}</>;
+}
+
+function RestBar({ endsAt, total, onAdjust, onSkip }: { endsAt: number; total: number; onAdjust: (d: number) => void; onSkip: () => void }) {
+  const now = useNow(250);
+  const left = Math.min(total, Math.max(0, Math.ceil((endsAt - now) / 1000)));
   const done = left <= 0;
+  const buzzed = useRef(false);
+  useEffect(() => {
+    if (done && !buzzed.current) {
+      buzzed.current = true;
+      haptic('success');
+    }
+    if (!done) buzzed.current = false;
+  }, [done]);
   return (
     <div className={`restbar ${done ? 'is-done' : ''}`} role="timer" aria-live="off">
       <div className="restbar-fill" style={{ transform: `scaleX(${done ? 1 : 1 - left / total})` }} />
@@ -493,21 +521,16 @@ function EditSetSheet({
   const ex = target ? draft.exercises[target.exIdx] : undefined;
   const s = ex && target ? ex.sets[target.setIdx] : undefined;
   const m = ex ? getMovement(ex.prescription.movementId) : undefined;
-  const [load, setLoadV] = useState(0);
-  const [reps, setReps] = useState(0);
-  const [rir, setRir] = useState<number | null>(null);
-  const [poor, setPoor] = useState(false);
+  // State initialises from the target; the parent remounts this component (key) for each new edit.
+  const [load, setLoadV] = useState(() => {
+    if (!s || !ex || !target || !m) return 0;
+    const bar = m.loadType === 'barbell' ? settings.equipment.barKgByMovement[m.id] ?? m.barKg ?? settings.equipment.defaultBarKg : 0;
+    return s.loadKg ?? suggestedLoad(ex, target.setIdx) ?? bar;
+  });
+  const [reps, setReps] = useState(() => s?.reps ?? 0);
+  const [rir, setRir] = useState<number | null>(() => s?.rir ?? null);
+  const [poor, setPoor] = useState(() => !!s?.techniquePoor);
   const [carry, setCarry] = useState(true);
-
-  useEffect(() => {
-    if (!s || !ex || !target) return;
-    const bar = m?.loadType === 'barbell' ? settings.equipment.barKgByMovement[m.id] ?? m.barKg ?? settings.equipment.defaultBarKg : 0;
-    setLoadV(s.loadKg ?? suggestedLoad(ex, target.setIdx) ?? bar);
-    setReps(s.reps);
-    setRir(s.rir);
-    setPoor(!!s.techniquePoor);
-    setCarry(true);
-  }, [target, s, ex, m, settings]);
 
   if (!target || !ex || !s || !m) return <Sheet open={false} onClose={onClose}>{null}</Sheet>;
   const loaded = !['bodyweight', 'none', 'erg'].includes(m.loadType);
@@ -614,35 +637,21 @@ function SwapBody({ ex, onSwap }: { ex: DraftExercise; onSwap: (id: string, scop
 function WodSheet({ open, draft, onClose, onSave }: { open: boolean; draft: Draft; onClose: () => void; onSave: (score: WodScore, hr?: HeartRateEntry) => void }) {
   const w = draft.prescription.conditioning;
   const prev = draft.conditioning;
-  const [time, setTime] = useState('');
-  const [rounds, setRounds] = useState('');
-  const [reps, setReps] = useState('');
-  const [cals, setCals] = useState('');
-  const [metres, setMetres] = useState('');
-  const [load, setLoadV] = useState('');
-  const [rx, setRx] = useState(true);
-  const [splits, setSplits] = useState<string[]>([]);
-  const [avg, setAvg] = useState('');
-  const [max, setMax] = useState('');
-  const [zones, setZones] = useState<string[]>(['', '', '', '', '']);
-  const [showZones, setShowZones] = useState(false);
-
-  useEffect(() => {
-    if (!open || !w) return;
-    const s = prev?.score ?? {};
-    setTime(s.timeSec != null ? mmss(s.timeSec) : '');
-    setRounds(s.rounds?.toString() ?? '');
-    setReps(s.reps?.toString() ?? '');
-    setCals(s.calories?.toString() ?? '');
-    setMetres(s.metres?.toString() ?? '');
-    setLoadV(s.loadKg?.toString() ?? '');
-    setRx(s.rx ?? true);
-    const n = w.intervals?.rounds ?? 0;
-    setSplits(Array.from({ length: n }, (_, i) => (s.splits?.[i] != null ? (w.scoreType === 'time' ? mmss(s.splits[i]) : String(s.splits[i])) : '')));
-    setAvg(prev?.hr?.avg?.toString() ?? '');
-    setMax(prev?.hr?.max?.toString() ?? '');
-    setZones(prev?.hr?.zonesSec ? prev.hr.zonesSec.map((z) => String(Math.round(z / 60))) : ['', '', '', '', '']);
-  }, [open, w, prev]);
+  // Initialised from any saved score; the parent remounts this sheet (key) each time it opens.
+  const init = prev?.score ?? {};
+  const fmtSplit = (x: number) => (w?.scoreType === 'time' ? mmss(x) : String(x));
+  const [time, setTime] = useState(init.timeSec != null ? mmss(init.timeSec) : '');
+  const [rounds, setRounds] = useState(init.rounds?.toString() ?? '');
+  const [reps, setReps] = useState(init.reps?.toString() ?? '');
+  const [cals, setCals] = useState(init.calories?.toString() ?? '');
+  const [metres, setMetres] = useState(init.metres?.toString() ?? '');
+  const [load, setLoadV] = useState(init.loadKg?.toString() ?? '');
+  const [rx, setRx] = useState(init.rx ?? true);
+  const [splits, setSplits] = useState<string[]>(() => Array.from({ length: w?.intervals?.rounds ?? 0 }, (_, i) => (init.splits?.[i] != null ? fmtSplit(init.splits[i]) : '')));
+  const [avg, setAvg] = useState(prev?.hr?.avg?.toString() ?? '');
+  const [max, setMax] = useState(prev?.hr?.max?.toString() ?? '');
+  const [zones, setZones] = useState<string[]>(prev?.hr?.zonesSec ? prev.hr.zonesSec.map((z) => String(Math.round(z / 60))) : ['', '', '', '', '']);
+  const [showZones, setShowZones] = useState(!!prev?.hr?.zonesSec);
 
   if (!w) return null;
   const isIntervals = w.format === 'intervals' && !!w.intervals;

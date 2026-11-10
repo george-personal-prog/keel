@@ -49,7 +49,8 @@ export function assessReadiness(history: History, today: string): Readiness {
   if (!sessions.length) return { mods, flags, easyConditioning };
 
   const lastDate = sessions[sessions.length - 1].date;
-  const skipsSinceLast = history.skips.filter((s) => s.date > lastDate && s.date <= today);
+  // Same-day skips count too: a skip logged on a day you also trained means "after it".
+  const skipsSinceLast = history.skips.filter((s) => s.date >= lastDate && s.date <= today);
 
   // ---- re-entry ramp: either the gap is right now, or we're still inside a recent ramp
   let gap = daysBetween(lastDate, today);

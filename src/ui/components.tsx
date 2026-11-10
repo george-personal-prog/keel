@@ -49,37 +49,48 @@ export function Card({ children, className = '', onClick, as = 'div' }: { childr
 // ------------------------------------------------------------------ Sheet
 
 export function Sheet({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title?: ReactNode; children: ReactNode; footer?: ReactNode }) {
-  const [mounted, setMounted] = useState(open);
-  const [shown, setShown] = useState(false);
+  // Lifecycle: present (mounted) → closing (slide-out animation) → unmounted.
+  const [present, setPresent] = useState(open);
+  const [closing, setClosing] = useState(false);
+  // While closing, keep showing the last content so it doesn't vanish mid-animation.
+  const [held, setHeld] = useState<{ title?: ReactNode; children: ReactNode; footer?: ReactNode }>({ title, children, footer });
+  if (open && !present) setPresent(true);
+  if (open && closing) setClosing(false);
+  if (!open && present && !closing) setClosing(true);
+  if (open && (held.children !== children || held.title !== title || held.footer !== footer)) setHeld({ title, children, footer });
+  const content = open ? { title, children, footer } : held;
+
   const dragStart = useRef<number | null>(null);
   const [dragY, setDragY] = useState(0);
+  const panel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (open) {
-      setMounted(true);
-      const id = requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
-      return () => cancelAnimationFrame(id);
-    }
-    setShown(false);
-    const t = setTimeout(() => setMounted(false), 260);
+    if (!closing) return;
+    const t = setTimeout(() => {
+      setPresent(false);
+      setClosing(false);
+    }, 260);
     return () => clearTimeout(t);
-  }, [open]);
+  }, [closing]);
 
+  // Focus moves into the sheet when it opens and returns to where it was when it closes.
   useEffect(() => {
     if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    panel.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      previous?.focus?.({ preventScroll: true });
+    };
   }, [open, onClose]);
 
-  if (!mounted) return null;
+  if (!present) return null;
   return (
-    <div className={`sheet-root ${shown ? 'is-shown' : ''}`} role="dialog" aria-modal="true">
+    <div className={`sheet-root ${closing ? 'is-closing' : ''}`} role="dialog" aria-modal="true">
       <div className="sheet-backdrop" onClick={onClose} />
-      <div
-        className="sheet"
-        style={dragY ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
-      >
+      <div ref={panel} tabIndex={-1} className="sheet" style={dragY ? { transform: `translateY(${dragY}px)` } : undefined}>
         <div
           className="sheet-grab"
           onPointerDown={(e) => {
@@ -95,9 +106,9 @@ export function Sheet({ open, onClose, title, children, footer }: { open: boolea
         >
           <span />
         </div>
-        {title && <div className="sheet-title">{title}</div>}
-        <div className="sheet-body">{children}</div>
-        {footer && <div className="sheet-footer">{footer}</div>}
+        {content.title && <div className="sheet-title">{content.title}</div>}
+        <div className="sheet-body">{content.children}</div>
+        {content.footer && <div className="sheet-footer">{content.footer}</div>}
       </div>
     </div>
   );
@@ -105,7 +116,7 @@ export function Sheet({ open, onClose, title, children, footer }: { open: boolea
 
 // ------------------------------------------------------------------ RIR chips
 
-export const RIR_VALUES = [0, 1, 2, 3, 4] as const;
+const RIR_VALUES = [0, 1, 2, 3, 4] as const;
 
 export function RirChips({ value, target, onChange, compact }: { value: number | null; target?: number; onChange: (v: number) => void; compact?: boolean }) {
   return (
@@ -151,11 +162,8 @@ export function Stepper({
   format?: (v: number) => string;
   decimal?: boolean;
 }) {
-  const [text, setText] = useState(format(value));
+  const [text, setText] = useState('');
   const [editing, setEditing] = useState(false);
-  useEffect(() => {
-    if (!editing) setText(format(value));
-  }, [value, editing, format]);
   const set = (v: number) => {
     const c = Math.min(max, Math.max(min, Math.round(v * 100) / 100));
     haptic();
@@ -172,18 +180,19 @@ export function Stepper({
           <input
             className="display"
             inputMode={decimal ? 'decimal' : 'numeric'}
-            value={text}
+            value={editing ? text : format(value)}
             aria-label={label}
             onFocus={(e) => {
+              setText(format(value));
               setEditing(true);
-              e.target.select();
+              const el = e.target;
+              requestAnimationFrame(() => el.select());
             }}
             onChange={(e) => setText(e.target.value.replace(',', '.'))}
             onBlur={() => {
               setEditing(false);
               const v = Number(text);
-              if (Number.isFinite(v)) set(v);
-              else setText(format(value));
+              if (text.trim() !== '' && Number.isFinite(v)) set(v);
             }}
           />
           {unit && <span className="stepper-unit">{unit}</span>}

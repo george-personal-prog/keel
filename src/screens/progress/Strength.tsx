@@ -6,7 +6,7 @@ import type { AppData } from '../../data/store';
 import { Card } from '../../ui/components';
 import { BarChart, LineChart, Stat } from '../../ui/charts';
 import { haptic } from '../../ui/haptics';
-import { MUSCLE_LABEL, SET_BAND } from './Overview';
+import { MUSCLE_LABEL, SET_BAND } from './labels';
 
 const MUSCLE_ORDER: Muscle[] = ['delts-side', 'delts-rear', 'chest-upper', 'lats', 'chest', 'upper-back', 'quads', 'hamstrings', 'glutes', 'biceps', 'triceps'];
 const WEAK = new Set<Muscle>(['delts-side', 'delts-rear', 'chest-upper', 'lats']);

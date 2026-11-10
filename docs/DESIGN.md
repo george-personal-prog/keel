@@ -13,7 +13,7 @@ Dark-first, built for a sweaty thumb in a gym between sets. All tokens live in `
 | Group | Tokens |
 |---|---|
 | Surfaces | `--bg` #0C0D0F · `--bg-raised` #15171A · `--surface` #1C1F23 · `--surface-hi` #262A2F |
-| Text | `--text` #F3F1EA · `--text-2` #A6ABB1 · `--text-3` #6B7178 (AA on `--bg` for `--text-2`) |
+| Text | `--text` #F3F1EA · `--text-2` #A6ABB1 · `--text-3` #808790 (all text tokens ≥ 4.5:1 on bg and cards) |
 | Accent | `--signal` #FF6A2B · `--sea` #3CC6B3 · `--brass` #E7C36A · `--danger` #FF5A5F · `--ok` #79D38A |
 | RIR scale | 0 red → 1 orange → 2 amber → 3 green → 4+ sea |
 | Space | 4-pt: `--s1` 4 … `--s10` 40 |

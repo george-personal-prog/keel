@@ -5,4 +5,8 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   base: process.env.BASE_PATH ?? '/',
   plugins: [react()],
+  build: {
+    // The service worker reads this to precache every built file (offline, incl. lazy screens).
+    manifest: 'asset-manifest.json',
+  },
 });

@@ -447,3 +447,11 @@
   padding: 0 var(--s3);
   font-weight: 650;
 }
+
+.lg-finish.is-ready .btn {
+  animation: ready-pulse 1.6s var(--ease-out) 2;
+}
+@keyframes ready-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 106, 43, 0.5); }
+  100% { box-shadow: 0 0 0 16px rgba(255, 106, 43, 0); }
+}

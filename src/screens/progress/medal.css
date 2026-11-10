@@ -1,0 +1,34 @@
+/* Badge medal: loaded wherever BadgeMedal is used (Progress and Summary). */
+.medal-hex {
+  fill: var(--surface);
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.medal-inner {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.medal-hull {
+  fill: var(--text-3);
+}
+.medal-fin,
+.medal-pip {
+  fill: var(--text-3);
+}
+.medal.is-earned .medal-hex {
+  fill: var(--brass-soft);
+  stroke: var(--brass);
+}
+.medal.is-earned .medal-inner {
+  stroke: rgba(231, 195, 106, 0.35);
+}
+.medal.is-earned .medal-hull {
+  fill: var(--text);
+}
+.medal.is-earned .medal-fin {
+  fill: var(--signal);
+}
+.medal.is-earned .medal-pip {
+  fill: var(--brass);
+}

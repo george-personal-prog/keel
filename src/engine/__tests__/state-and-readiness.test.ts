@@ -175,6 +175,11 @@ describe('skips, gaps and re-entry', () => {
     expect(ill.conditioning?.why).toMatch(/easy aerobic/);
   });
 
+  it('an ill skip logged on the same day as the last session still counts', () => {
+    const h: History = { sessions: [base('2026-01-01')], skips: [{ date: '2026-01-01', reason: 'ill' }] };
+    expect(assessReadiness(h, '2026-01-03').mods.loadFactor).toBe(0.9);
+  });
+
   it('busy → no penalty, suggests short-on-time', () => {
     const h: History = { sessions: [base('2026-01-01')], skips: [{ date: '2026-01-03', reason: 'busy' }] };
     const r = assessReadiness(h, '2026-01-04');

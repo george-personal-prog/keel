@@ -20,16 +20,22 @@
 - Session summary shows records and badges earned in that session.
 - 158 tests total. Reviewed at 390×844 with 12 weeks of simulated data.
 
+**Phase 4 — Polish, PWA install, deploy: done.**
+- Offline precache of every build file, update detection with a reload pill, iPhone install hint.
+- Screen wake lock during sessions; finish-ready cue; record/badge celebration on the summary.
+- Code-split analytics screens; logger clocks isolated from the rest of the screen.
+- Contrast fix (muted text ≥ 4.5:1), sheet focus handling, zero lint warnings.
+- Fixed: same-day "ill" skip now counts; summary crash from promise-returning scrollTo; badge medals unstyled outside Progress.
+- CI actions updated (checkout v7, setup-node v7, upload-pages-artifact v5, deploy-pages v5).
+- 159 tests. Reviewed at 390×844; production build checked for offline precache.
+
 ## Next
 
 1. **Owner test on iPhone**: install via Safari → Share → Add to Home Screen; run calibration week; collect feedback.
-2. Phase 4 — polish (light mode?, motion pass, empty/edge states, a11y), phase 5 — Firebase sync + import.
+2. **Phase 5 — Firebase sync + import**: Google sign-in, Firestore with offline persistence, JSON import/restore, CSV export of sets/sessions. Needs owner to create a Firebase project (instructions at that point).
 
 Known small gaps in phase 2:
-- A skip logged on the same day as a completed session doesn't trigger the "ill" return modifier (readiness compares skip date > last session date).
 - Progress photos are not in the JSON export (size); Firebase sync in phase 5 should decide whether to back them up.
-- JS bundle is ~480 kB (Vite warns at 500 kB): consider code-splitting the Progress tab in phase 4.
-- Lint warnings remain for React "set-state-in-effect" in sheets/steppers (harmless; tidy in phase 4).
 
 ## Open questions / ideas to revisit
 - Use bodyweight (when logged) to make weighted pull-up/dip e1RMs meaningful for deload detection and analytics.

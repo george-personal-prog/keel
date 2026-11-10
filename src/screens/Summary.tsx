@@ -1,47 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
-import { bestSetE1rm, DAY_TEMPLATES, getMovement, type History, type SessionLog } from '../engine';
-import { kg, mmss, shortDate } from '../app/format';
+import { DAY_TEMPLATES, type History, type SessionLog } from '../engine';
+import { highlights } from '../analytics/session';
+import { mmss, shortDate } from '../app/format';
 import { updateSessionNotes } from '../data/store';
 import { achievementsForSession, computeAchievements } from '../analytics/badges';
 import { BadgeMedal } from './progress/Badges';
 import { Button, Capsule, Card } from '../ui/components';
 import { IconTrophy, KeelMark } from '../ui/icons';
+import { haptic } from '../ui/haptics';
 import './summary.css';
-
-export interface ExerciseHighlight {
-  movementId: string;
-  name: string;
-  best: string;
-  e1rm: number;
-  prevBest: number;
-  isPR: boolean;
-}
-
-/** e1RM bests in this session vs everything before it. */
-export function highlights(session: SessionLog, history: History): ExerciseHighlight[] {
-  const before = history.sessions.filter((s) => s.id !== session.id && (s.date < session.date || (s.date === session.date && s.sessionNumber < session.sessionNumber)));
-  return session.exercises.map((ex) => {
-    const e1 = bestSetE1rm(ex.sets);
-    const prev = Math.max(0, ...before.flatMap((s) => s.exercises.filter((x) => x.movementId === ex.movementId).map((x) => bestSetE1rm(x.sets))));
-    const top = ex.sets.reduce((b, s) => ((s.loadKg ?? 0) > (b.loadKg ?? 0) ? s : b), ex.sets[0]);
-    return {
-      movementId: ex.movementId,
-      name: getMovement(ex.movementId).name,
-      best: top.loadKg != null ? `${kg(top.loadKg)} kg × ${top.reps}` : `${top.reps} reps`,
-      e1rm: e1,
-      prevBest: prev,
-      isPR: e1 > 0 && prev > 0 && e1 > prev * 1.005 && ex.scheme !== 'olympic',
-    };
-  });
-}
 
 export function Summary({ session, history, frequency, onDone }: { session: SessionLog; history: History; frequency: number; onDone: () => void }) {
   const [notes, setNotes] = useState(session.notes ?? '');
   const hs = useMemo(() => highlights(session, history), [session, history]);
-  useEffect(() => window.scrollTo({ top: 0 }), []);
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, []);
   const earned = useMemo(() => achievementsForSession(computeAchievements(history, frequency), session.id), [history, frequency, session.id]);
   const records = earned.filter((a) => a.kind !== 'badge');
   const badges = earned.filter((a) => a.kind === 'badge');
+  const celebrate = records.length > 0 || badges.length > 0;
+  useEffect(() => {
+    if (!celebrate) return;
+    const t = setTimeout(() => haptic('success'), 450);
+    return () => clearTimeout(t);
+  }, [celebrate]);
   const sets = session.exercises.reduce((a, e) => a + e.sets.length, 0);
   const tonnage = session.exercises.reduce((a, e) => a + e.sets.reduce((b, s) => b + (s.loadKg ?? 0) * s.reps, 0), 0);
   const title = DAY_TEMPLATES[session.dayTypeId]?.title ?? 'Session';
@@ -93,8 +76,8 @@ export function Summary({ session, history, frequency, onDone }: { session: Sess
           )}
           {badges.length > 0 && (
             <div className="sum-badges">
-              {badges.map((b) => (
-                <div key={b.id} className="sum-badge">
+              {badges.map((b, i) => (
+                <div key={b.id} className="sum-badge" style={{ animationDelay: `${450 + i * 120}ms` }}>
                   <BadgeMedal tier={b.tier ?? 1} earned size={48} />
                   <div>
                     <b>{b.title}</b>

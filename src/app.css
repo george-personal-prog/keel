@@ -499,3 +499,16 @@ button.hist-row:active {
   color: var(--text-3);
   line-height: 1.45;
 }
+
+.update-pill {
+  width: 100%;
+  text-align: left;
+}
+.install-dismiss {
+  display: inline-block;
+  margin-left: 8px;
+  font-weight: 650;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { requestPersistence } from './data/db';
 import { useAppData } from './data/store';
-import { History } from './screens/History';
 import { Logger } from './screens/Logger';
 import { Onboarding } from './screens/Onboarding';
-import { Progress } from './screens/Progress';
-import { SettingsScreen } from './screens/Settings';
-import { Summary } from './screens/Summary';
 import { Today } from './screens/Today';
+
+// Analytics-heavy screens load on demand (and are cached by the service worker for offline use).
+const History = lazy(() => import('./screens/History').then((m) => ({ default: m.History })));
+const Progress = lazy(() => import('./screens/Progress').then((m) => ({ default: m.Progress })));
+const SettingsScreen = lazy(() => import('./screens/Settings').then((m) => ({ default: m.SettingsScreen })));
+const Summary = lazy(() => import('./screens/Summary').then((m) => ({ default: m.Summary })));
 import { IconHistory, IconProgress, IconSettings, IconToday, KeelMark } from './ui/icons';
 import { haptic } from './ui/haptics';
 import './app.css';
@@ -31,19 +33,18 @@ export default function App() {
     void requestPersistence();
   }, []);
 
-  if (!data) {
-    return (
-      <div className="splash">
-        <KeelMark size={44} />
-      </div>
-    );
-  }
+  if (!data) return <Splash />;
 
   if (!data.profile || !data.state) return <Onboarding />;
 
   if (summaryId) {
     const session = data.history.sessions.find((s) => s.id === summaryId);
-    if (session) return <Summary session={session} history={data.history} frequency={data.state.track.frequency} onDone={() => setSummaryId(null)} />;
+    if (session)
+      return (
+        <Suspense fallback={<Splash />}>
+          <Summary session={session} history={data.history} frequency={data.state.track.frequency} onDone={() => setSummaryId(null)} />
+        </Suspense>
+      );
   }
 
   if (loggerOpen && data.draft) {
@@ -64,10 +65,12 @@ export default function App() {
   return (
     <div className="shell">
       <main className="shell-main" key={tab}>
-        {tab === 'today' && <Today data={data} onOpenLogger={() => setLoggerOpen(true)} />}
-        {tab === 'history' && <History data={data} />}
-        {tab === 'progress' && <Progress data={data} />}
-        {tab === 'settings' && <SettingsScreen data={data} />}
+        <Suspense fallback={null}>
+          {tab === 'today' && <Today data={data} onOpenLogger={() => setLoggerOpen(true)} />}
+          {tab === 'history' && <History data={data} />}
+          {tab === 'progress' && <Progress data={data} />}
+          {tab === 'settings' && <SettingsScreen data={data} />}
+        </Suspense>
       </main>
       <nav className="tabbar" aria-label="Main">
         {TABS.map(({ id, label, Icon }) => (
@@ -86,6 +89,14 @@ export default function App() {
           </button>
         ))}
       </nav>
+    </div>
+  );
+}
+
+function Splash() {
+  return (
+    <div className="splash">
+      <KeelMark size={44} />
     </div>
   );
 }

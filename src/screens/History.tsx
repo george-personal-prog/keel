@@ -14,7 +14,7 @@ function monthLabel(iso: string) {
   return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
-export function scoreText(s: SessionLog): string | undefined {
+function scoreText(s: SessionLog): string | undefined {
   const c = s.conditioning;
   if (!c) return undefined;
   const sc = c.score;
