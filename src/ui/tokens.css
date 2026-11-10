@@ -1,0 +1,191 @@
+@import '@fontsource-variable/archivo/wdth.css';
+
+/* ------------------------------------------------------------------ tokens */
+:root {
+  color-scheme: dark;
+
+  --bg: #0c0d0f;
+  --bg-raised: #15171a;
+  --surface: #1c1f23;
+  --surface-hi: #262a2f;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.13);
+
+  --text: #f3f1ea;
+  --text-2: #a6abb1;
+  --text-3: #6b7178;
+
+  --signal: #ff6a2b;
+  --signal-press: #e85a1f;
+  --signal-ink: #1c0a02;
+  --signal-soft: rgba(255, 106, 43, 0.14);
+  --sea: #3cc6b3;
+  --sea-soft: rgba(60, 198, 179, 0.13);
+  --brass: #e7c36a;
+  --brass-soft: rgba(231, 195, 106, 0.14);
+  --danger: #ff5a5f;
+  --danger-soft: rgba(255, 90, 95, 0.13);
+  --ok: #79d38a;
+  --ok-soft: rgba(121, 211, 138, 0.13);
+
+  --rir-0: #ff5a5f;
+  --rir-1: #ff8a3d;
+  --rir-2: #f2c14e;
+  --rir-3: #8fd18a;
+  --rir-4: #3cc6b3;
+
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+  --s10: 40px;
+
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  --font: 'Archivo Variable', ui-sans-serif, -apple-system, system-ui, sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 20px;
+  --fs-2xl: 26px;
+  --fs-3xl: 34px;
+  --fs-hero: 56px;
+  --condensed: 72%;
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast: 120ms;
+  --t-med: 220ms;
+  --t-slow: 360ms;
+
+  --tap: 48px;
+  --tap-lg: 56px;
+  --tabbar-h: 64px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.55);
+}
+
+/* ------------------------------------------------------------------ base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: 450;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+textarea,
+select {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 0 var(--s3);
+  min-height: var(--tap);
+  font-size: 16px; /* prevents iOS zoom */
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+textarea {
+  padding: var(--s3);
+  resize: none;
+  width: 100%;
+}
+
+/* Display type: condensed, heavy, tabular */
+.display {
+  font-stretch: var(--condensed);
+  font-weight: 780;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.eyebrow {
+  font-size: var(--fs-xs);
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.muted {
+  color: var(--text-2);
+}
+
+.faint {
+  color: var(--text-3);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}

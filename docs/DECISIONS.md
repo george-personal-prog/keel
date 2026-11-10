@@ -25,7 +25,22 @@ Most things are *derived* from the history on every call (e1RMs, training maxes,
 `.github/workflows/deploy.yml` runs lint → tests → build → deploy on every push to `main`. A failing engine test blocks deployment. `BASE_PATH` is set to `/<repo-name>/` so the app works under the project-pages URL.
 
 ### T6. Name: **Keel**
-Original name: the keel is the backbone that keeps a boat steady and on course, which is what a coherent long-term programme should do. Placeholder mark only; real branding in phase 2/4.
+Original name: the keel is the backbone that keeps a boat steady and on course, which is what a coherent long-term programme should do. The mark is a hull seen side-on with a signal-orange fin keel. Design system in `docs/DESIGN.md`.
+
+### T7. Storage: Dexie (IndexedDB), versioned
+`src/data/db.ts`, database `keel`, version 1: `meta` (settings, track state, profile), `sessions`, `skips`, `drafts`, `body`. Version blocks are append-only. All screens read through one live query (`useAppData`) and write through action functions in `src/data/store.ts`. Finishing a session (save log + advance queue + clear draft) is one transaction. `navigator.storage.persist()` is requested on launch to reduce iOS eviction risk; JSON export exists already as a safety net before Firebase (phase 5).
+
+### T8. The in-progress session is a persisted "draft"
+`src/app/draft.ts` (pure, unit-tested). Every tap writes the draft to IndexedDB, so iOS killing the PWA mid-workout loses nothing. Only completed sets are written to the session log; an unfinished session saves as `partial`.
+
+### T9. Logging interaction model
+One tap on the check logs a set exactly as prescribed (load, reps, target RIR); an RIR chip row (0–4+) then appears with the target pre-selected, so a different RIR is the second tap. Tapping load/reps opens big steppers with equipment-aware increments; a load change carries to the remaining sets of the same kind (calibration back-offs get 90%). Supersets alternate partners before the rest timer starts; the "current set" highlight follows that order. The rest timer is timestamp-based (survives backgrounding).
+
+### T10. PWA without a plugin
+Hand-written `public/manifest.webmanifest` and `public/sw.js` (network-first navigations with cached shell fallback; cache-first for content-hashed assets). iOS icons and launch screens are PNGs generated from the mark. Fewer dependencies, nothing magic to break.
+
+### T11. Fonts bundled locally
+Archivo variable (width + weight axes) via `@fontsource-variable/archivo`, so the app looks the same offline. Condensed width for numbers/titles, normal for body.
 
 ---
 

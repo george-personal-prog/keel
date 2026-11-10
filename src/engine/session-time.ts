@@ -93,12 +93,8 @@ export function buildWarmup(first: ExercisePrescription | undefined, settings: S
   const bar = m.loadType === 'barbell' ? barKgFor(m, eq) : 0;
   const ramp: PrescribedSet[] = [];
   if (m.loadType === 'barbell') ramp.push({ kind: 'warmup', loadKg: bar, reps: 8, targetRir: 5 });
-  const steps: [number, number][] = [
-    [0.4, 5],
-    [0.6, 3],
-    [0.75, 2],
-    [0.85, 1],
-  ];
+  // Minimal ramp: empty bar (barbell only) + up to three jumps.
+  const steps: [number, number][] = m.loadType === 'barbell' ? [[0.5, 5], [0.7, 3], [0.85, 1]] : [[0.5, 6], [0.75, 3]];
   for (const [p, reps] of steps) {
     const load = roundLoad(top * p, m, eq, 'nearest');
     if (load == null || load <= bar || ramp.some((s) => s.loadKg === load)) continue;
@@ -107,7 +103,7 @@ export function buildWarmup(first: ExercisePrescription | undefined, settings: S
   }
   return {
     style: 'ramp',
-    minutes: Math.round(2 + ramp.length * 1.25),
+    minutes: Math.round(1.5 + ramp.length),
     steps: ['2 min easy erg', `Ramp sets on ${m.name}`],
     rampSets: ramp,
   };

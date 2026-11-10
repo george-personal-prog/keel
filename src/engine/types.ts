@@ -372,6 +372,8 @@ export interface SessionLog {
   exercises: LoggedExercise[];
   conditioning?: LoggedConditioning;
   notes?: string;
+  /** Wall-clock minutes from start to finish (UI-recorded). */
+  durationMin?: number;
 }
 
 export type SkipReason = 'motivation' | 'busy' | 'ill' | 'away';

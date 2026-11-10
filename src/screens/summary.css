@@ -1,0 +1,79 @@
+.sum {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: calc(var(--safe-top) + var(--s8)) var(--s4) calc(var(--safe-bottom) + var(--s6));
+  animation: screen-in var(--t-slow) var(--ease-out);
+}
+.sum-hero h1 {
+  font-size: 72px;
+  margin: var(--s2) 0 var(--s1);
+}
+.sum-hero p {
+  margin: 0;
+  font-size: var(--fs-lg);
+}
+.sum-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: var(--s6) 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.sum-stats > div {
+  display: flex;
+  flex-direction: column;
+  padding: var(--s4) 0;
+}
+.sum-stats > div + div {
+  padding-left: var(--s4);
+  border-left: 1px solid var(--line);
+}
+.sum-stats .display {
+  font-size: 40px;
+}
+.sum-stats small {
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  margin-top: 4px;
+}
+.sum-prs {
+  background: linear-gradient(135deg, var(--brass-soft), transparent 70%), var(--bg-raised);
+  animation: pr-in 600ms var(--ease-spring) both 200ms;
+}
+@keyframes pr-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.sum-prs-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--brass);
+  font-weight: 700;
+  margin-bottom: var(--s2);
+}
+.sum-pr,
+.sum-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-sm);
+}
+.sum-pr:last-child,
+.sum-row:last-child {
+  border-bottom: 0;
+}
+.sum-pr small {
+  color: var(--brass);
+  margin-left: 4px;
+}
+.sum-row .num {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+  color: var(--text);
+}

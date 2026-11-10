@@ -1,66 +1,91 @@
-import { useMemo, useState } from 'react';
-import { DEFAULT_SETTINGS, createInitialState, prescribeNextSession, type Focus, type Frequency } from './engine';
+import { useEffect, useState } from 'react';
+import { requestPersistence } from './data/db';
+import { useAppData } from './data/store';
+import { History } from './screens/History';
+import { Logger } from './screens/Logger';
+import { Onboarding } from './screens/Onboarding';
+import { Progress } from './screens/Progress';
+import { SettingsScreen } from './screens/Settings';
+import { Summary } from './screens/Summary';
+import { Today } from './screens/Today';
+import { IconHistory, IconProgress, IconSettings, IconToday, KeelMark } from './ui/icons';
+import { haptic } from './ui/haptics';
+import './app.css';
 
-/**
- * Phase 1 holding page: shows what the engine prescribes for the first session of each track.
- * Replaced by the real app shell in phase 2.
- */
+export type Tab = 'today' | 'history' | 'progress' | 'settings';
+
+const TABS: { id: Tab; label: string; Icon: typeof IconToday }[] = [
+  { id: 'today', label: 'Today', Icon: IconToday },
+  { id: 'history', label: 'History', Icon: IconHistory },
+  { id: 'progress', label: 'Progress', Icon: IconProgress },
+  { id: 'settings', label: 'Settings', Icon: IconSettings },
+];
+
 export default function App() {
-  const [focus, setFocus] = useState<Focus>('off-season');
-  const [frequency, setFrequency] = useState<Frequency>(4);
-  const sessions = useMemo(() => {
-    let state = { ...createInitialState({ focus, frequency }), calibrated: true };
-    return Array.from({ length: frequency }, () => {
-      const p = prescribeNextSession({ settings: DEFAULT_SETTINGS, state, history: { sessions: [], skips: [] }, today: '2026-01-05' });
-      state = { ...state, cursor: state.cursor + 1 };
-      return p;
-    });
-  }, [focus, frequency]);
+  const data = useAppData();
+  const [tab, setTab] = useState<Tab>('today');
+  const [loggerOpen, setLoggerOpen] = useState(false);
+  const [summaryId, setSummaryId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void requestPersistence();
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="splash">
+        <KeelMark size={44} />
+      </div>
+    );
+  }
+
+  if (!data.profile || !data.state) return <Onboarding />;
+
+  if (summaryId) {
+    const session = data.history.sessions.find((s) => s.id === summaryId);
+    if (session) return <Summary session={session} history={data.history} onDone={() => setSummaryId(null)} />;
+  }
+
+  if (loggerOpen && data.draft) {
+    return (
+      <Logger
+        data={data}
+        draft={data.draft}
+        onClose={() => setLoggerOpen(false)}
+        onFinished={(id) => {
+          setLoggerOpen(false);
+          setSummaryId(id);
+          setTab('today');
+        }}
+      />
+    );
+  }
 
   return (
-    <main>
-      <h1>
-        KEEL<span>.</span>
-      </h1>
-      <p className="muted">Phase 1: programming engine. This page previews a week of sessions before any history is logged. The real app arrives in phase 2.</p>
-      <p>
-        <select value={focus} onChange={(e) => setFocus(e.target.value as Focus)}>
-          <option value="off-season">Off-season</option>
-          <option value="competition">Competition</option>
-        </select>{' '}
-        <select value={frequency} onChange={(e) => setFrequency(Number(e.target.value) as Frequency)}>
-          {[3, 4, 5, 6].map((f) => (
-            <option key={f} value={f}>
-              {f}× / week
-            </option>
-          ))}
-        </select>
-      </p>
-      {sessions.map((s) => (
-        <section key={s.sessionNumber}>
-          <strong>{s.title}</strong> <span className="muted">· ~{s.estimatedMin} min · {s.subtitle}</span>
-          {s.exercises.map((e) => (
-            <div className="ex" key={e.slotKey}>
-              <span className="label">{e.label}</span>
-              <span>
-                {e.movementName}
-                {e.tempo ? <span className="muted"> · tempo {e.tempo}</span> : null}
-                <div className="sets">{e.sets.map((x) => `${x.loadKg ?? '—'}×${x.reps} @${x.targetRir}`).join('  ')}</div>
-              </span>
-              <span className="why">{e.why}</span>
-            </div>
-          ))}
-          {s.conditioning ? (
-            <div className="ex">
-              <span className="label">WOD</span>
-              <span>
-                {s.conditioning.name} <span className="muted">· {s.conditioning.structure}</span>
-              </span>
-              <span className="why">{s.conditioning.why}</span>
-            </div>
-          ) : null}
-        </section>
-      ))}
-    </main>
+    <div className="shell">
+      <main className="shell-main" key={tab}>
+        {tab === 'today' && <Today data={data} onOpenLogger={() => setLoggerOpen(true)} />}
+        {tab === 'history' && <History data={data} />}
+        {tab === 'progress' && <Progress data={data} />}
+        {tab === 'settings' && <SettingsScreen data={data} />}
+      </main>
+      <nav className="tabbar" aria-label="Main">
+        {TABS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            className={`tab ${tab === id ? 'is-on' : ''}`}
+            aria-current={tab === id ? 'page' : undefined}
+            onClick={() => {
+              if (tab !== id) haptic();
+              setTab(id);
+              window.scrollTo({ top: 0 });
+            }}
+          >
+            <Icon size={24} />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
   );
 }
