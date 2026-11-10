@@ -10,8 +10,10 @@ import type { Draft } from '../app/draft';
 import type { SessionLog, SkipEvent } from '../engine';
 
 export interface MetaRow {
-  key: 'settings' | 'trackState' | 'profile';
+  key: 'settings' | 'trackState' | 'profile' | 'sync';
   value: unknown;
+  /** ms timestamp of the last local change (drives sync conflict resolution). */
+  savedAt?: number;
 }
 
 export interface Profile {

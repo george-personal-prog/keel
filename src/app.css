@@ -512,3 +512,20 @@ button.hist-row:active {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+.cloud-copy {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.cloud-error {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--danger);
+}
+.cloud-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}

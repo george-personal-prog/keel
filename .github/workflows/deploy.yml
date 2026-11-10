@@ -42,3 +42,28 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  # Firebase Hosting (the install address for the iPhone app, so Google sign-in works).
+  # Runs only once the FIREBASE_SERVICE_ACCOUNT secret and FIREBASE_PROJECT_ID variable exist.
+  firebase:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      HAS_FIREBASE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' && vars.FIREBASE_PROJECT_ID != '' }}
+    steps:
+      - uses: actions/checkout@v7
+        if: env.HAS_FIREBASE == 'true'
+      - uses: actions/setup-node@v7
+        if: env.HAS_FIREBASE == 'true'
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci && npm run build
+        if: env.HAS_FIREBASE == 'true'
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        if: env.HAS_FIREBASE == 'true'
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          channelId: live

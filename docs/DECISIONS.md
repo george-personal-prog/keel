@@ -167,3 +167,28 @@ Records and badges on the session summary get one slow brass sheen across the ca
 ### Q5. Robustness
 - Effects never use expression bodies: modern browsers make `window.scrollTo` return a promise, which React treats as an invalid cleanup (this crashed the summary screen during review).
 - Sheets keep their last content while sliding out, and editable sheets initialise from props via a remount key rather than syncing state in effects (no lint warnings remain).
+
+---
+
+## Backup & sync (phase 5)
+
+### S1. The phone stays the source of truth
+IndexedDB remains primary; the app never waits on the network. Firebase is a backup and a way to move to a new phone, not a server the app depends on.
+
+### S2. Firestore layout and merge rules
+`users/{uid}/sessions/{id}`, `skips/{date}_{reason}`, `body/{date}`, `meta/{settings|trackState|profile}`. Deterministic ids mean the same record from two devices lands on the same document. A sync pulls everything, merges (union by id, local wins on the same id; the training state that has progressed furthest wins, then the newest; other settings newest-wins; body girths merge per day), then pushes only documents whose content hash changed (`src/sync/model.ts`, pure and tested). Meta rows now carry `savedAt`.
+
+### S3. When sync runs
+On sign-in, 3 s after any data change, on returning to the foreground, and on regaining connection. A sync in progress queues one follow-up rather than running twice.
+
+### S4. Security
+Firestore rules (`firestore.rules`) allow a signed-in user to read/write only `users/{their uid}` and only the four known collections. The web config is committed: it identifies the project but grants nothing on its own.
+
+### S5. Hosting for sign-in
+Google sign-in from an installed iPhone web app needs the app on the same domain as the auth handler (Safari storage partitioning breaks cross-domain redirects; popups don't work in standalone mode). So the app is also hosted on Firebase Hosting (free) and installed from `<project>.firebaseapp.com`; GitHub Pages stays as a mirror. Standalone mode uses redirect sign-in, browsers use a popup. CI deploys to Firebase Hosting once a service-account secret exists; until then Claude deploys with the Firebase CLI.
+
+### S6. Firebase is lazy-loaded
+The SDK (~170 kB gzipped) is a separate chunk loaded only once cloud backup is switched on. `@grpc/grpc-js` is overridden to a patched version: the advisories concern Node.js servers, not the browser build, but this keeps `npm audit` clean.
+
+### S7. Export / import
+JSON backup (everything except photos) with strict validation before restore (`parseBackup`), restore = replace-all in one transaction. CSV exports: one row per set, one row per conditioning piece.

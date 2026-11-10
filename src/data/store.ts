@@ -20,6 +20,7 @@ import {
 import type { TrackChangeTiming } from '../engine/state';
 import { draftToSessionLog, type Draft } from '../app/draft';
 import { db, type BodyRow, type Profile } from './db';
+import { conditioningCsv, makeBackup, setsCsv, type Backup } from './transfer';
 
 export interface AppData {
   settings: Settings;
@@ -61,6 +62,17 @@ export function useAppData(): AppData | undefined {
   }, []);
 }
 
+// ------------------------------------------------------------------ change hook
+
+/** Cloud sync registers here; data changes then trigger a (debounced) background sync. */
+let changeListener: (() => void) | null = null;
+export function onLocalChange(fn: (() => void) | null): void {
+  changeListener = fn;
+}
+function afterLocalChange(): void {
+  changeListener?.();
+}
+
 // ------------------------------------------------------------------ dates
 
 export function localToday(now = new Date()): string {
@@ -74,22 +86,25 @@ export function localToday(now = new Date()): string {
 
 export async function onboard(track: Track, settings: Settings): Promise<void> {
   await db.transaction('rw', db.meta, async () => {
-    await db.meta.put({ key: 'settings', value: settings });
-    await db.meta.put({ key: 'trackState', value: createInitialState(track, Math.floor(Math.random() * 1e9)) });
-    await db.meta.put({ key: 'profile', value: { onboardedAt: localToday() } satisfies Profile });
+    const savedAt = Date.now();
+    await db.meta.put({ key: 'settings', value: settings, savedAt });
+    await db.meta.put({ key: 'trackState', value: createInitialState(track, Math.floor(Math.random() * 1e9)), savedAt });
+    await db.meta.put({ key: 'profile', value: { onboardedAt: localToday() } satisfies Profile, savedAt });
   });
 }
 
 export async function saveSettings(settings: Settings): Promise<void> {
-  await db.meta.put({ key: 'settings', value: settings });
+  await db.meta.put({ key: 'settings', value: settings, savedAt: Date.now() });
+  afterLocalChange();
 }
 
 async function updateState(fn: (s: TrackState) => TrackState): Promise<void> {
   await db.transaction('rw', db.meta, async () => {
     const row = await db.meta.get('trackState');
     if (!row) throw new Error('No track state');
-    await db.meta.put({ key: 'trackState', value: fn(migrateState(row.value)) });
+    await db.meta.put({ key: 'trackState', value: fn(migrateState(row.value)), savedAt: Date.now() });
   });
+  afterLocalChange();
 }
 
 export const setTrack = (track: Track, timing: TrackChangeTiming) => updateState((s) => changeTrack(s, track, timing));
@@ -110,18 +125,21 @@ export async function finishSession(draft: Draft): Promise<string> {
   await db.transaction('rw', db.sessions, db.meta, db.drafts, async () => {
     await db.sessions.put(draftToSessionLog(draft, id, Date.now()));
     const row = await db.meta.get('trackState');
-    if (row) await db.meta.put({ key: 'trackState', value: completeSession(migrateState(row.value), draft.prescription, draft.date) });
+    if (row) await db.meta.put({ key: 'trackState', value: completeSession(migrateState(row.value), draft.prescription, draft.date), savedAt: Date.now() });
     await db.drafts.delete('current');
   });
+  afterLocalChange();
   return id;
 }
 
 export async function recordSkip(reason: SkipReason, date = localToday()): Promise<void> {
   await db.skips.add({ date, reason });
+  afterLocalChange();
 }
 
 export async function updateSessionNotes(id: string, notes: string): Promise<void> {
   await db.sessions.update(id, { notes: notes.trim() || undefined });
+  afterLocalChange();
 }
 
 // ------------------------------------------------------------------ body
@@ -139,6 +157,7 @@ export async function saveBodyEntry(entry: Omit<BodyRow, 'id'>): Promise<void> {
       await db.body.add(entry);
     }
   });
+  afterLocalChange();
 }
 
 export async function addPhoto(file: File, date = localToday()): Promise<void> {
@@ -160,10 +179,39 @@ async function makeThumb(file: Blob, size: number): Promise<string> {
   return c.toDataURL('image/jpeg', 0.75);
 }
 
-// ------------------------------------------------------------------ export
+// ------------------------------------------------------------------ export / import
 
 export async function exportAll(): Promise<Blob> {
   const [meta, sessions, skips, body] = await Promise.all([db.meta.toArray(), db.sessions.toArray(), db.skips.toArray(), db.body.toArray()]);
-  const payload = { app: 'keel', exportVersion: 1, exportedAt: new Date().toISOString(), dbVersion: db.verno, meta, sessions, skips, body };
+  const payload = makeBackup({ dbVersion: db.verno, meta, sessions, skips, body });
   return new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+}
+
+export async function exportCsv(kind: 'sets' | 'conditioning'): Promise<Blob> {
+  const sessions = await db.sessions.toArray();
+  return new Blob([kind === 'sets' ? setsCsv(sessions) : conditioningCsv(sessions)], { type: 'text/csv' });
+}
+
+/** Replace everything on this device with a validated backup (photos are untouched). */
+export async function restoreBackup(backup: Backup): Promise<void> {
+  await db.transaction('rw', [db.meta, db.sessions, db.skips, db.body, db.drafts], async () => {
+    await Promise.all([db.meta.clear(), db.sessions.clear(), db.skips.clear(), db.body.clear(), db.drafts.clear()]);
+    await db.meta.bulkPut(backup.meta);
+    await db.sessions.bulkPut(backup.sessions);
+    await db.skips.bulkAdd(backup.skips.map(({ date, reason }) => ({ date, reason })));
+    await db.body.bulkAdd(backup.body.map(({ id: _id, ...rest }) => rest));
+  });
+  afterLocalChange();
+}
+
+/** Trigger a file download (works in iOS standalone: opens the share/save sheet). */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }

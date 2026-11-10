@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { Focus, Frequency, Settings, Track } from '../engine';
-import { exportAll, localToday, saveSettings, setTrack, type AppData } from '../data/store';
+import { localToday, saveSettings, setTrack, type AppData } from '../data/store';
+import { CloudBackupCard, DataTransfer } from './settings/Backup';
 import { Button, Capsule, Card, Row, Segmented, Sheet, Stepper, Toast } from '../ui/components';
 import { haptic } from '../ui/haptics';
-import { IconDownload } from '../ui/icons';
 
 export function SettingsScreen({ data }: { data: AppData }) {
   const state = data.state!;
@@ -34,15 +34,6 @@ export function SettingsScreen({ data }: { data: AppData }) {
     setToast(timing === 'now' ? 'Track switched' : 'Switches at the next block');
   };
 
-  const download = async () => {
-    const blob = await exportAll();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `keel-backup-${localToday()}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
 
   return (
     <>
@@ -137,16 +128,15 @@ export function SettingsScreen({ data }: { data: AppData }) {
       </Card>
 
       <div className="section-label">
-        <span className="eyebrow">Data</span>
+        <span className="eyebrow">Backup & data</span>
       </div>
-      <Card className="set-group">
-        <Row label="Stored on this phone" detail={persisted ? 'Protected from automatic clean-up' : 'The browser may clear it if storage runs low: export a backup now and then'} />
-        <div className="set-block">
-          <Button icon={<IconDownload size={20} />} onClick={download} block>
-            Export backup (JSON)
-          </Button>
-        </div>
-      </Card>
+      <div className="stack">
+        <CloudBackupCard />
+        <Card className="set-group">
+          <Row label="Stored on this phone" detail={persisted ? 'Protected from automatic clean-up.' : 'iOS may clear website data if storage runs low. Keep a backup.'} />
+          <DataTransfer onToast={setToast} />
+        </Card>
+      </div>
 
       <div className="section-label">
         <span className="eyebrow">About</span>

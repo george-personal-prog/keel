@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './ui/tokens.css';
 import App from './App';
 import { registerServiceWorker } from './app/pwa';
+import { startCloudBackup } from './sync/client';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -11,3 +12,4 @@ createRoot(document.getElementById('root')!).render(
 );
 
 registerServiceWorker();
+startCloudBackup();

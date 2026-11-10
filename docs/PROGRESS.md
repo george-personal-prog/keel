@@ -29,13 +29,20 @@
 - CI actions updated (checkout v7, setup-node v7, upload-pages-artifact v5, deploy-pages v5).
 - 159 tests. Reviewed at 390×844; production build checked for offline precache.
 
+**Phase 5 — Firebase sync + export: built; waiting on the owner's Firebase project.**
+- Export: JSON backup, sets CSV, WODs CSV. Import: validated restore from a JSON backup.
+- Cloud backup (`src/sync/`): pure merge/diff model (tested), Dexie apply layer (tested with fake-indexeddb), lazy Firebase client (Google sign-in, Firestore), status + controls in Settings → Backup & data.
+- `firestore.rules`, `firebase.json` (hosting with SPA rewrite and cache headers), optional Firebase Hosting CI job.
+- 174 tests.
+- **To finish:** owner follows `docs/SETUP_FIREBASE.md` and pastes the web config; Claude adds it to `src/sync/config.ts`, runs `firebase deploy --only firestore:rules,hosting`, and tests sign-in + sync.
+
 ## Next
 
-1. **Owner test on iPhone**: install via Safari → Share → Add to Home Screen; run calibration week; collect feedback.
-2. **Phase 5 — Firebase sync + import**: Google sign-in, Firestore with offline persistence, JSON import/restore, CSV export of sets/sessions. Needs owner to create a Firebase project (instructions at that point).
+1. **Finish phase 5 setup** (above), then **owner test on iPhone** from the Firebase address: install via Safari → Share → Add to Home Screen; run calibration week; collect feedback.
+2. Collect feedback from real use and iterate (programming tweaks, UI rough edges).
 
 Known small gaps in phase 2:
-- Progress photos are not in the JSON export (size); Firebase sync in phase 5 should decide whether to back them up.
+- Progress photos are deliberately not backed up (privacy, size): they live only on the phone.
 
 ## Open questions / ideas to revisit
 - Use bodyweight (when logged) to make weighted pull-up/dip e1RMs meaningful for deload detection and analytics.
