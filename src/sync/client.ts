@@ -56,9 +56,9 @@ async function load(): Promise<Fb> {
   fb.init(FIREBASE_CONFIG!, (u) => {
     user = u;
     if (u) {
-      set({ email: u.email ?? undefined });
+      set({ email: u.email ?? undefined, message: undefined });
       void syncNow();
-    } else set({ phase: 'signed-out', email: undefined });
+    } else set({ phase: 'signed-out', email: undefined, message: status.phase === 'signed-out' ? status.message : undefined });
   });
   onLocalChange(() => {
     clearTimeout(timer);
@@ -90,7 +90,8 @@ export async function turnOn(): Promise<void> {
     try {
       await f.signIn(isStandalone());
     } catch (e) {
-      set({ phase: 'error', message: friendly(e) });
+      // Still signed out: keep offering sign-in, with the reason.
+      set({ phase: 'signed-out', message: friendly(e) });
     }
   }
 }

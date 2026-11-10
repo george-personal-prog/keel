@@ -29,16 +29,21 @@
 - CI actions updated (checkout v7, setup-node v7, upload-pages-artifact v5, deploy-pages v5).
 - 159 tests. Reviewed at 390×844; production build checked for offline precache.
 
-**Phase 5 — Firebase sync + export: built; waiting on the owner's Firebase project.**
+**Phase 5 — Firebase sync + export: deployed; awaiting the owner's first sign-in on iPhone.**
 - Export: JSON backup, sets CSV, WODs CSV. Import: validated restore from a JSON backup.
 - Cloud backup (`src/sync/`): pure merge/diff model (tested), Dexie apply layer (tested with fake-indexeddb), lazy Firebase client (Google sign-in, Firestore), status + controls in Settings → Backup & data.
 - `firestore.rules`, `firebase.json` (hosting with SPA rewrite and cache headers), optional Firebase Hosting CI job.
 - 174 tests.
-- **To finish:** owner follows `docs/SETUP_FIREBASE.md` and pastes the web config; Claude adds it to `src/sync/config.ts`, runs `firebase deploy --only firestore:rules,hosting`, and tests sign-in + sync.
+- Firebase project `keel-77ab9` (Spark). Config in `src/sync/config.ts`; rules and hosting deployed.
+- **Install address: https://keel-77ab9.firebaseapp.com** (Google sign-in works there from the installed app). GitHub Pages remains a mirror.
+- Deploy to Firebase (manual for now; CLI is logged in on this Mac):
+  `BASE_PATH=/ npm run build && npx firebase-tools@15.35.0 deploy --only firestore:rules,hosting --project keel-77ab9`
+  CI will do it automatically once a `FIREBASE_SERVICE_ACCOUNT` secret and `FIREBASE_PROJECT_ID` variable exist (optional).
+- Not yet verified: a real Google sign-in and sync round-trip (needs the owner's own sign-in).
 
 ## Next
 
-1. **Finish phase 5 setup** (above), then **owner test on iPhone** from the Firebase address: install via Safari → Share → Add to Home Screen; run calibration week; collect feedback.
+1. **Owner test on iPhone** from https://keel-77ab9.firebaseapp.com: install, sign in to cloud backup, run calibration: install via Safari → Share → Add to Home Screen; run calibration week; collect feedback.
 2. Collect feedback from real use and iterate (programming tweaks, UI rough edges).
 
 Known small gaps in phase 2:

@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { downloadBlob, exportAll, exportCsv, localToday, restoreBackup } from '../../data/store';
 import { parseBackup, type Backup } from '../../data/transfer';
 import { turnOff, turnOn, syncNow, useSyncStatus } from '../../sync/client';
+import { APP_URL } from '../../sync/config';
+import { isIOS } from '../../app/pwa';
 import { Button, Capsule, Card, Row, Sheet } from '../../ui/components';
 import { haptic } from '../../ui/haptics';
 import { IconDownload } from '../../ui/icons';
@@ -43,6 +45,11 @@ export function CloudBackupCard() {
             <p className="muted cloud-copy">
               Keeps a copy of your training in your own Google account, and restores it on a new phone. Progress photos stay on this phone.
             </p>
+            {isIOS() && !location.origin.startsWith(APP_URL) && (
+              <p className="cloud-copy">
+                On iPhone, sign-in works from the main address: install Keel from <a href={APP_URL}>{APP_URL.replace('https://', '')}</a>.
+              </p>
+            )}
             <Button
               variant="primary"
               block
@@ -79,8 +86,7 @@ export function CloudBackupCard() {
             </div>
           </>
         )}
-        {s.phase === 'off' && s.message && <p className="cloud-error">{s.message}</p>}
-        {s.phase === 'error' && s.message && <p className="cloud-error">{s.message}</p>}
+        {(s.phase === 'off' || s.phase === 'signed-out') && s.message && <p className="cloud-error">{s.message}</p>}
       </div>
     </Card>
   );

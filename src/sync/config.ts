@@ -9,4 +9,14 @@
  */
 import type { FirebaseOptions } from 'firebase/app';
 
-export const FIREBASE_CONFIG: FirebaseOptions | null = null;
+export const FIREBASE_CONFIG: FirebaseOptions | null = {
+  apiKey: 'AIzaSyDfKhtQYUBMP-kTbgSXeRdeGWWXAd3S0DI',
+  authDomain: 'keel-77ab9.firebaseapp.com',
+  projectId: 'keel-77ab9',
+  storageBucket: 'keel-77ab9.firebasestorage.app',
+  messagingSenderId: '14501089130',
+  appId: '1:14501089130:web:7acb9637c2ac615bc21f13',
+};
+
+/** The address to install the iPhone app from (same domain as the sign-in handler). */
+export const APP_URL = 'https://keel-77ab9.firebaseapp.com';
